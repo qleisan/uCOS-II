@@ -1,7 +1,8 @@
 
-SUBDIRS = ucos app
+SUBDIRS = arduino ucos app
 
 TARGET = ucos_sample
+
 OBJS = $(BUILDDIR)/app.o \
        $(BUILDDIR)/ucos.o 
 
@@ -11,9 +12,9 @@ export TOPDIR
 BUILDDIR = $(TOPDIR)/build
 export BUILDDIR
 
-
 all: subdirs $(TARGET)
 
+subdirs: $(BUILDDIR)
 subdirs:
 	@for dir in $(SUBDIRS) ; do $(MAKE) -C $$dir || exit 1; done
 
@@ -21,6 +22,8 @@ $(TARGET): $(OBJS)
 	@$(CC) $(CFLAGS) $^ -o $@  $(LDFLAGS)
 	@echo "  [LD] $@  $(LDFLAGS)  "
 
+$(BUILDDIR):
+	mkdir -p $(@)
 
 clean:
 	find . -name "*.o" -o -name "*.exe" | xargs rm -rf;
