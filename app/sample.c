@@ -12,15 +12,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ucos_ii.h"
-#include <core.h>
 #include <string.h>
-
-int led_pin = 1;
-int btn_pin = 5;
 
 void hardware_init()
 {
-	 pinMode(led_pin, OUTPUT);
 }
 /* Function common to all tasks */
 
@@ -28,7 +23,6 @@ void MyTask( void *p_arg )
 {
 
 	char* sTaskName = (char*)p_arg;
-	static flag1 = 1;
 #if OS_CRITICAL_METHOD == 3 
     OS_CPU_SR     cpu_sr = 0;
 #endif
@@ -38,21 +32,6 @@ void MyTask( void *p_arg )
 		/* printf uses mutex to get terminal access, therefore must enter critical section */
 		OS_ENTER_CRITICAL();
 		printf( "Name: %s\n", sTaskName );
-		if(!strcmp(sTaskName,"Task 1"))
-		{
-			if(flag1 == 1)
-			{
-				flag1 = 0;
-				printf("HIGH\n");
-				digitalWrite(led_pin, HIGH);
-			}
-			else
-			{
-				flag1 = 1;
-				printf("LOW\n");
-				digitalWrite(led_pin, LOW);
-			}
-		}		
 		OS_EXIT_CRITICAL();
 
 		/* Delay so other tasks may execute. */
@@ -77,15 +56,15 @@ int main (void)
 	char sTask2[] = "Task 2";
 	char sTask3[] = "Task 3";
 	char sTask4[] = "Task 4";
-//	char sTask5[] = "Task 5";
+	char sTask5[] = "Task 5";
 
 	OSInit();
 
 	OSTaskCreate( MyTask, sTask1, (void*)Stk1, 4 );
-//	OSTaskCreate( MyTask, sTask2, (void*)Stk2, 5 );
-//	OSTaskCreate( MyTask, sTask3, (void*)Stk3, 6 );
-//	OSTaskCreate( MyTask, sTask4, (void*)Stk4, 7 );
-//	OSTaskCreate( MyTask, sTask5, (void*)Stk5, 8 );
+	OSTaskCreate( MyTask, sTask2, (void*)Stk2, 5 );
+	OSTaskCreate( MyTask, sTask3, (void*)Stk3, 6 );
+	OSTaskCreate( MyTask, sTask4, (void*)Stk4, 7 );
+	OSTaskCreate( MyTask, sTask5, (void*)Stk5, 8 );
 
     OSStart();
 

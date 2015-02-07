@@ -1,5 +1,5 @@
 
-SUBDIRS = arduino ucos app
+SUBDIRS = ucos app
 
 TARGET = ucos_sample
 
