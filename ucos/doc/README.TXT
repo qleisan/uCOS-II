@@ -1,7 +1,7 @@
                          uC/OS-II, The Real-Time Kernel
                                 DISTRIBUTION
 
-                                Version 2.86
+                                Version 2.90
 
                                 READ ME FILE
 
@@ -11,7 +11,7 @@
 ******************************************************************************
 
 Even if µC/OS-II is provided in source form, µC/OS-II is NOT freeware NOR open 
-source software.  You are NOT allowed to distribute the source code for µC/OS-II 
+source software. You are NOT allowed to distribute the source code for µC/OS-II 
 without written consent from Micriµm.
 
 You need to obtain an 'Object Code Distribution License' to embed µC/OS-II in 
@@ -43,8 +43,8 @@ the problem to either:
  2) By writing to me at:
 
         Micrium
-        949 Crestview Circle
-        Weston, FL 33327
+        1290 Weston Road, Suite 306
+        Weston, FL 33326
         U.S.A.
 
         c/o: Jean J. Labrosse

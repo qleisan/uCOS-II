@@ -3,12 +3,12 @@
 *                                                uC/OS-II
 *                                          The Real-Time Kernel
 *
-*                              (c) Copyright 1992-2007, Micrium, Weston, FL
+*                              (c) Copyright 1992-2009, Micrium, Weston, FL
 *                                           All Rights Reserved
 *
 * File    : uCOS_II.C
 * By      : Jean J. Labrosse
-* Version : V2.86
+* Version : V2.91
 *
 * LICENSING TERMS:
 * ---------------
@@ -22,7 +22,7 @@
 
 #define  OS_GLOBALS                           /* Declare GLOBAL variables                              */
 #include <ucos_ii.h>
-#if 0
+
 
 #define  OS_MASTER_FILE                       /* Prevent the following files from including includes.h */
 #include <os_core.c>
@@ -35,5 +35,3 @@
 #include <os_task.c>
 #include <os_time.c>
 #include <os_tmr.c>
-
-#endif

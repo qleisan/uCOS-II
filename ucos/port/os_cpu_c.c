@@ -240,6 +240,28 @@ void OSTaskIdleHook (void)
 #endif
 }
 
+/*
+*********************************************************************************************************
+*                                            TASK RETURN HOOK
+*
+* Description: This function is called if a task accidentally returns.  In other words, a task should
+*              either be an infinite loop or delete itself when done.
+*
+* Arguments  : p_tcb        Pointer to the task control block of the task that is returning.
+*
+* Note(s)    : None.
+*********************************************************************************************************
+*/
+void OSTaskReturnHook(OS_TCB *ptcb)
+{
+#if OS_CFG_APP_HOOKS_EN > 0u
+	if (OS_AppTaskReturnHookPtr != (OS_APP_HOOK_TCB)0) {
+		(*OS_AppTaskReturnHookPtr)(ptcb);
+	}
+#else
+	(void)ptcb;	/* Prevent compiler warning */
+#endif
+}
 
 /*
 *********************************************************************************************************
@@ -257,7 +279,7 @@ void OSTaskIdleHook (void)
 */
 OS_STK* OSTaskStkInit (void (*task)(void* pd), void* pdata, OS_STK* ptos, INT16U opt)
 {
-	FuncInfo* pFuncInfo = (FuncInfo*)( ((INT8U*)ptos) - sizeof( FuncInfo ) );
+	FuncInfo* pFuncInfo = (FuncInfo*)ptos;
 	pFuncInfo->pFunc = task;
 	pFuncInfo->pArgs = pdata;
 
@@ -528,4 +550,3 @@ static void InitLinuxPort()
 	pthread_mutex_init(&mutThread, NULL);
 	pthread_cond_init (&cvThreadWrapper, NULL);
 }
-
