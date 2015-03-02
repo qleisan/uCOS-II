@@ -1,1 +1,5 @@
-ucos-ii for pcDuino`s arduino
+µCOS for Linux
+
+This is a µCOS port for Linux.
+
+
