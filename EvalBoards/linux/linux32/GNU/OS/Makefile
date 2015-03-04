@@ -28,21 +28,8 @@ CP=@cp
 
 PROJ_ROOT =.
 APP_ROOT  =$(PROJ_ROOT)/App
-BSP_ROOT  =$(PROJ_ROOT)/../BSP
-CPU_ROOT  =$(PROJ_ROOT)/../../../../../uC-CPU
-CPUP_ROOT =$(CPU_ROOT)/Posix/GNU
 OS_ROOT   =$(PROJ_ROOT)/../../../../../uCOS-II/Source
 OSP_ROOT  =$(OS_ROOT)/../Ports/Posix/GNU
-TCP_ROOT  =$(PROJ_ROOT)/../../../../../uC-TCPIP/Source
-TCPP_ROOT =$(TCP_ROOT)/../Ports/Posix/GNU
-TCPD_ROOT =$(TCP_ROOT)/../Dev/Ether/Posix
-TCPP_ROOT =$(TCP_ROOT)/../Dev/Ether/PHY/Generic
-TCPI_ROOT =$(TCP_ROOT)/../IF
-IPV4_ROOT =$(TCP_ROOT)/../IP/IPv4
-LIB_ROOT  =$(PROJ_ROOT)/../../../../../uC-LIB
-LIBP_ROOT  =$(LIB_ROOT)/Ports
-KAL_ROOT  =$(PROJ_ROOT)/../../../../../uC-Common/KAL/uCOS-II
-KAL_HEADER  =$(KAL_ROOT)/../..
 OUTPUT    =$(PROJ_ROOT)/output
 
 
@@ -52,52 +39,26 @@ OUTPUT    =$(PROJ_ROOT)/output
 
 PROJ_NAME =OS
 
-CFLAGS    =-g -Wall -Werror -m32
-#CFLAGS    =-Os -Wall -Werror -m32
-CINCLUDES =-I$(APP_ROOT) -I$(BSP_ROOT) -I$(CPU_ROOT) -I$(CPUP_ROOT) -I$(OS_ROOT) -I$(OSP_ROOT) -I$(TCP_ROOT) -I$(LIB_ROOT) -I$(KAL_HEADER) -I$(TCPI_ROOT) -I$(TCPD_ROOT) -I$(TCPP_ROOT)
-AINCLUDES =-I$(APP_ROOT),-I$(BSP_ROOT),-I$(CPU_ROOT),-I$(CPUP_ROOT),-I$(OS_ROOT),-I$(OSP_ROOT),-I$(TCP_ROOT),-I$(LIB_ROOT),-I$(KAL_HEADER),-I$(TCPI_ROOT),-I$(TCPD_ROOT),-I$(TCPP_ROOT)
+#CFLAGS    =-g -Wall -Werror -m32
+CFLAGS    =-Os -Wall -Werror -m32
+CINCLUDES =-I$(APP_ROOT) -I$(OS_ROOT) -I$(OSP_ROOT)
+AINCLUDES =-I$(APP_ROOT),-I$(OS_ROOT),-I$(OSP_ROOT)
 ASFLAGS   =-g
 LDFLAGS   =-pthread -m32
 
 OS_SRC      :=ucos_ii.c
 OSP_SRC     :=os_cpu_c.c
-CPU_SRC     :=
-CPUP_SRC    :=
 APP_SRC     :=app.c
-BSP_SRC     :=
-TCP_SRC     :=
-TCPI_SRC    :=
-TCPD_SRC    :=
-TCPP_SRC    :=
-IPV4_SRC    :=
-KAL_SRC     :=
-LIB_SRC     :=
 
 OBJS_C      :=$(addprefix $(OS_ROOT)/,  $(patsubst %.c,%.o,$(filter %.c,$(OS_SRC))))   \
               $(addprefix $(OSP_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(OSP_SRC))))  \
-              $(addprefix $(CPU_ROOT)/,$(patsubst %.c,%.o,$(filter %.c,$(CPU_SRC)))) \
-              $(addprefix $(CPUP_ROOT)/,$(patsubst %.c,%.o,$(filter %.c,$(CPUP_SRC)))) \
-              $(addprefix $(APP_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(APP_SRC))))  \
-              $(addprefix $(BSP_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(BSP_SRC))))  \
-              $(addprefix $(KAL_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(KAL_SRC))))  \
-              $(addprefix $(LIB_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(LIB_SRC))))  \
-              $(addprefix $(IPV4_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(IPV4_SRC))))  \
-              $(addprefix $(TCPI_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(TCPI_SRC))))  \
-              $(addprefix $(TCPP_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(TCPP_SRC))))  \
-              $(addprefix $(TCPD_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(TCPD_SRC))))  \
-              $(addprefix $(TCP_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(TCP_SRC))))  
+              $(addprefix $(APP_ROOT)/, $(patsubst %.c,%.o,$(filter %.c,$(APP_SRC))))
 OBJS_ASM    :=$(addprefix $(OS_ROOT)/,  $(patsubst %.asm,%.o,$(filter %.asm,$(OS_SRC))))   \
               $(addprefix $(OSP_ROOT)/, $(patsubst %.asm,%.o,$(filter %.asm,$(OSP_SRC))))  \
-              $(addprefix $(CPUP_ROOT)/,$(patsubst %.asm,%.o,$(filter %.asm,$(CPUP_SRC)))) \
-              $(addprefix $(APP_ROOT)/, $(patsubst %.asm,%.o,$(filter %.asm,$(APP_SRC))))  \
-              $(addprefix $(BSP_ROOT)/, $(patsubst %.asm,%.o,$(filter %.asm,$(BSP_SRC))))  \
-              $(addprefix $(TCP_ROOT)/, $(patsubst %.asm,%.o,$(filter %.asm,$(TCP_SRC))))
+              $(addprefix $(APP_ROOT)/, $(patsubst %.asm,%.o,$(filter %.asm,$(APP_SRC))))
 OBJS_S      :=$(addprefix $(OS_ROOT)/,  $(patsubst %.s,%.o,$(filter %.s,$(OS_SRC))))   \
               $(addprefix $(OSP_ROOT)/, $(patsubst %.s,%.o,$(filter %.s,$(OSP_SRC))))  \
-              $(addprefix $(CPUP_ROOT)/,$(patsubst %.s,%.o,$(filter %.s,$(CPUP_SRC)))) \
-              $(addprefix $(APP_ROOT)/, $(patsubst %.s,%.o,$(filter %.s,$(APP_SRC))))  \
-              $(addprefix $(BSP_ROOT)/, $(patsubst %.s,%.o,$(filter %.s,$(BSP_SRC))))
-              $(addprefix $(TCP_ROOT)/, $(patsubst %.s,%.o,$(filter %.s,$(TCP_SRC))))
+              $(addprefix $(APP_ROOT)/, $(patsubst %.s,%.o,$(filter %.s,$(APP_SRC))))
 OBJS_ALL    :=$(addprefix $(OUTPUT)/obj/,$(notdir $(OBJS_C)) $(notdir $(OBJS_ASM)) $(notdir $(OBJS_S)))
 
 
