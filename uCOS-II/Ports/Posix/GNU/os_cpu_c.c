@@ -63,21 +63,21 @@
 *                                       GLOBAL VARIABLES
 *********************************************************************************************************
 */
-int nNumThreadsCreated=0;
-int nNumThreadsStarted=0;
+static int nNumThreadsCreated=0;
+static int nNumThreadsStarted=0;
 
 /* Condition variable to indicate whether all threads are waiting for their condition variables. i.e.
    the system is ready to run. */
-pthread_cond_t	cvThreadWrapper;
+static pthread_cond_t	cvThreadWrapper;
 
 /* Condition variables for all threads. Index for thread is stored in its stack. */
-pthread_cond_t	grcvThread[ OS_LOWEST_PRIO ];
+static pthread_cond_t	grcvThread[ OS_LOWEST_PRIO ];
 
 /* Array of threads */
-pthread_t		threadTask[ OS_LOWEST_PRIO ];
+static pthread_t	threadTask[ OS_LOWEST_PRIO ];
 
 /* Context switching control mutex */
-pthread_mutex_t 	mutThread;
+static pthread_mutex_t 	mutThread;
 
 
 /*
