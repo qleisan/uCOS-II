@@ -18,6 +18,12 @@
 
 #include "app_cfg.h"
 
+#if OS_STK_GROWTH == 1u
+#define STK_HEAD(size) (size - 1u)
+#else
+#define STK_HEAD(size) (0)
+#endif
+
 void hardware_init()
 {
 }
@@ -76,7 +82,7 @@ int main(void)
 
 	err =
 	    OSTaskCreate(MyTask, sTask1,
-			 (void *)&Stk1[APP_TASK_1_STK_SIZE - 1u],
+			 (void *)&Stk1[STK_HEAD(APP_TASK_1_STK_SIZE)],
 			 APP_TASK_1_PRIO);
 
 	if (err != OS_ERR_NONE) {
@@ -86,7 +92,7 @@ int main(void)
 
 	err =
 	    OSTaskCreate(MyTask, sTask2,
-			 (void *)&Stk2[APP_TASK_2_STK_SIZE - 1u],
+			 (void *)&Stk2[STK_HEAD(APP_TASK_2_STK_SIZE)],
 			 APP_TASK_2_PRIO);
 
 	if (err != OS_ERR_NONE) {
@@ -96,7 +102,7 @@ int main(void)
 
 	err =
 	    OSTaskCreate(MyTask, sTask3,
-			 (void *)&Stk3[APP_TASK_3_STK_SIZE - 1u],
+			 (void *)&Stk3[STK_HEAD(APP_TASK_3_STK_SIZE)],
 			 APP_TASK_3_PRIO);
 
 	if (err != OS_ERR_NONE) {
@@ -106,7 +112,7 @@ int main(void)
 
 	err =
 	    OSTaskCreate(MyTask, sTask4,
-			 (void *)&Stk4[APP_TASK_4_STK_SIZE - 1u],
+			 (void *)&Stk4[STK_HEAD(APP_TASK_4_STK_SIZE)],
 			 APP_TASK_4_PRIO);
 
 	if (err != OS_ERR_NONE) {
@@ -116,7 +122,7 @@ int main(void)
 
 	err =
 	    OSTaskCreate(MyTask, sTask5,
-			 (void *)&Stk5[APP_TASK_5_STK_SIZE - 1u],
+			 (void *)&Stk5[STK_HEAD(APP_TASK_5_STK_SIZE)],
 			 APP_TASK_5_PRIO);
 
 	if (err != OS_ERR_NONE) {
