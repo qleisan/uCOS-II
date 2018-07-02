@@ -4,12 +4,12 @@
 *                                          The Real-Time Kernel
 *                                             TIME MANAGEMENT
 *
-*                              (c) Copyright 1992-2013, Micrium, Weston, FL
+*                           (c) Copyright 1992-2017; Micrium, Inc.; Weston; FL
 *                                           All Rights Reserved
 *
 * File    : OS_TIME.C
 * By      : Jean J. Labrosse
-* Version : V2.92.11
+* Version : V2.92.14
 *
 * LICENSING TERMS:
 * ---------------
@@ -18,6 +18,15 @@
 * its use in your product. We provide ALL the source code for your convenience and to help you experience
 * uC/OS-II.   The fact that the  source is provided does  NOT  mean that you can use it without  paying a
 * licensing fee.
+*
+* Knowledge of the source code may NOT be used to develop a similar product.
+*
+* Please help us continue to provide the embedded community with the finest software available.
+* Your honesty is greatly appreciated.
+*
+* You can find our product's user manual, API reference, release notes and
+* more information at https://doc.micrium.com.
+* You can contact us at www.micrium.com.
 *********************************************************************************************************
 */
 
@@ -62,15 +71,18 @@ void  OSTimeDly (INT32U ticks)
         OS_ENTER_CRITICAL();
         y            =  OSTCBCur->OSTCBY;        /* Delay current task                                 */
         OSRdyTbl[y] &= (OS_PRIO)~OSTCBCur->OSTCBBitX;
+        OS_TRACE_TASK_SUSPENDED(OSTCBCur);
         if (OSRdyTbl[y] == 0u) {
             OSRdyGrp &= (OS_PRIO)~OSTCBCur->OSTCBBitY;
         }
         OSTCBCur->OSTCBDly = ticks;              /* Load ticks in TCB                                  */
+        OS_TRACE_TASK_DLY(ticks);
         OS_EXIT_CRITICAL();
         OS_Sched();                              /* Find next task to run!                             */
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                    DELAY TASK FOR SPECIFIED TIME
@@ -140,7 +152,8 @@ INT8U  OSTimeDlyHMSM (INT8U   hours,
     return (OS_ERR_NONE);
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                        RESUME A DELAYED TASK
@@ -198,6 +211,7 @@ INT8U  OSTimeDlyResume (INT8U prio)
     if ((ptcb->OSTCBStat & OS_STAT_SUSPEND) == OS_STAT_RDY) {  /* Is task suspended?                   */
         OSRdyGrp               |= ptcb->OSTCBBitY;             /* No,  Make ready                      */
         OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+        OS_TRACE_TASK_READY(ptcb);
         OS_EXIT_CRITICAL();
         OS_Sched();                                            /* See if this is new highest priority  */
     } else {
@@ -206,7 +220,8 @@ INT8U  OSTimeDlyResume (INT8U prio)
     return (OS_ERR_NONE);
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                       GET CURRENT SYSTEM TIME
@@ -236,6 +251,7 @@ INT32U  OSTimeGet (void)
     return (ticks);
 }
 #endif
+
 
 /*
 *********************************************************************************************************

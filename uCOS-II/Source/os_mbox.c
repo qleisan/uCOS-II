@@ -4,12 +4,12 @@
 *                                          The Real-Time Kernel
 *                                       MESSAGE MAILBOX MANAGEMENT
 *
-*                              (c) Copyright 1992-2013, Micrium, Weston, FL
+*                           (c) Copyright 1992-2017; Micrium, Inc.; Weston; FL
 *                                           All Rights Reserved
 *
 * File    : OS_MBOX.C
 * By      : Jean J. Labrosse
-* Version : V2.92.11
+* Version : V2.92.14
 *
 * LICENSING TERMS:
 * ---------------
@@ -18,6 +18,15 @@
 * its use in your product. We provide ALL the source code for your convenience and to help you experience
 * uC/OS-II.   The fact that the  source is provided does  NOT  mean that you can use it without  paying a
 * licensing fee.
+*
+* Knowledge of the source code may NOT be used to develop a similar product.
+*
+* Please help us continue to provide the embedded community with the finest software available.
+* Your honesty is greatly appreciated.
+*
+* You can find our product's user manual, API reference, release notes and
+* more information at https://doc.micrium.com.
+* You can contact us at www.micrium.com.
 *********************************************************************************************************
 */
 
@@ -70,7 +79,8 @@ void  *OSMboxAccept (OS_EVENT *pevent)
     return (pmsg);                                        /* Return the message received (or NULL)     */
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                          CREATE A MESSAGE MAILBOX
@@ -120,10 +130,13 @@ OS_EVENT  *OSMboxCreate (void *pmsg)
         pevent->OSEventName    = (INT8U *)(void *)"?";
 #endif
         OS_EventWaitListInit(pevent);
+
+        OS_TRACE_MBOX_CREATE(pevent, pevent->OSEventName);
     }
     return (pevent);                             /* Return pointer to event control block              */
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                           DELETE A MAIBOX
@@ -139,12 +152,14 @@ OS_EVENT  *OSMboxCreate (void *pmsg)
 *                                                    In this case, all the tasks pending will be readied.
 *
 *              perr          is a pointer to an error code that can contain one of the following values:
-*                            OS_ERR_NONE             The call was successful and the mailbox was deleted
-*                            OS_ERR_DEL_ISR          If you attempted to delete the mailbox from an ISR
-*                            OS_ERR_INVALID_OPT      An invalid option was specified
-*                            OS_ERR_TASK_WAITING     One or more tasks were waiting on the mailbox
-*                            OS_ERR_EVENT_TYPE       If you didn't pass a pointer to a mailbox
-*                            OS_ERR_PEVENT_NULL      If 'pevent' is a NULL pointer.
+*                            OS_ERR_NONE                  The call was successful and the mailbox was deleted
+*                            OS_ERR_DEL_ISR               If you attempted to delete the mailbox from an ISR
+*                            OS_ERR_INVALID_OPT           An invalid option was specified
+*                            OS_ERR_ILLEGAL_DEL_RUN_TIME  If you tried to delete a mailbox after safety
+*                                                         critical operation started.
+*                            OS_ERR_TASK_WAITING          One or more tasks were waiting on the mailbox
+*                            OS_ERR_EVENT_TYPE            If you didn't pass a pointer to a mailbox
+*                            OS_ERR_PEVENT_NULL           If 'pevent' is a NULL pointer.
 *
 * Returns    : pevent        upon error
 *              (OS_EVENT *)0 if the mailbox was successfully deleted.
@@ -157,7 +172,7 @@ OS_EVENT  *OSMboxCreate (void *pmsg)
 *              4) Because ALL tasks pending on the mailbox will be readied, you MUST be careful in
 *                 applications where the mailbox is used for mutual exclusion because the resource(s)
 *                 will no longer be guarded by the mailbox.
-*              5) All tasks that were waiting for the mailbox will be readied and returned an 
+*              5) All tasks that were waiting for the mailbox will be readied and returned an
 *                 OS_ERR_PEND_ABORT if OSMboxDel() was called with OS_DEL_ALWAYS
 *********************************************************************************************************
 */
@@ -182,18 +197,31 @@ OS_EVENT  *OSMboxDel (OS_EVENT  *pevent,
     }
 #endif
 
+#ifdef OS_SAFETY_CRITICAL_IEC61508
+    if (OSSafetyCriticalStartFlag == OS_TRUE) {
+        OS_SAFETY_CRITICAL_EXCEPTION();
+        *perr = OS_ERR_ILLEGAL_DEL_RUN_TIME;
+        return ((OS_EVENT *)0);
+    }
+#endif
+
 #if OS_ARG_CHK_EN > 0u
     if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
         *perr = OS_ERR_PEVENT_NULL;
         return (pevent);
     }
 #endif
+
+    OS_TRACE_MBOX_DEL_ENTER(pevent, opt);
+
     if (pevent->OSEventType != OS_EVENT_TYPE_MBOX) {       /* Validate event block type                */
         *perr = OS_ERR_EVENT_TYPE;
+        OS_TRACE_MBOX_DEL_EXIT(*perr);
         return (pevent);
     }
     if (OSIntNesting > 0u) {                               /* See if called from ISR ...               */
         *perr = OS_ERR_DEL_ISR;                            /* ... can't DELETE from an ISR             */
+        OS_TRACE_MBOX_DEL_EXIT(*perr);
         return (pevent);
     }
     OS_ENTER_CRITICAL();
@@ -247,11 +275,14 @@ OS_EVENT  *OSMboxDel (OS_EVENT  *pevent,
              pevent_return = pevent;
              break;
     }
+
+    OS_TRACE_MBOX_DEL_EXIT(*perr);
+
     return (pevent_return);
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                    PEND ON MAILBOX FOR A MESSAGE
@@ -284,7 +315,7 @@ OS_EVENT  *OSMboxDel (OS_EVENT  *pevent,
 *                            if you didn't pass the proper pointer to the event control block.
 *********************************************************************************************************
 */
-/*$PAGE*/
+
 void  *OSMboxPend (OS_EVENT  *pevent,
                    INT32U     timeout,
                    INT8U     *perr)
@@ -293,7 +324,6 @@ void  *OSMboxPend (OS_EVENT  *pevent,
 #if OS_CRITICAL_METHOD == 3u                          /* Allocate storage for CPU status register      */
     OS_CPU_SR  cpu_sr = 0u;
 #endif
-
 
 
 #ifdef OS_SAFETY_CRITICAL
@@ -309,16 +339,22 @@ void  *OSMboxPend (OS_EVENT  *pevent,
         return ((void *)0);
     }
 #endif
+
+    OS_TRACE_MBOX_PEND_ENTER(pevent, timeout);
+
     if (pevent->OSEventType != OS_EVENT_TYPE_MBOX) {  /* Validate event block type                     */
         *perr = OS_ERR_EVENT_TYPE;
+        OS_TRACE_MBOX_PEND_EXIT(*perr);
         return ((void *)0);
     }
     if (OSIntNesting > 0u) {                          /* See if called from ISR ...                    */
         *perr = OS_ERR_PEND_ISR;                      /* ... can't PEND from an ISR                    */
+        OS_TRACE_MBOX_PEND_EXIT(*perr);
         return ((void *)0);
     }
     if (OSLockNesting > 0u) {                         /* See if called with scheduler locked ...       */
         *perr = OS_ERR_PEND_LOCKED;                   /* ... can't PEND when locked                    */
+        OS_TRACE_MBOX_PEND_EXIT(*perr);
         return ((void *)0);
     }
     OS_ENTER_CRITICAL();
@@ -327,6 +363,7 @@ void  *OSMboxPend (OS_EVENT  *pevent,
         pevent->OSEventPtr = (void *)0;               /* Clear the mailbox                             */
         OS_EXIT_CRITICAL();
         *perr = OS_ERR_NONE;
+        OS_TRACE_MBOX_PEND_EXIT(*perr);
         return (pmsg);                                /* Return the message received (or NULL)         */
     }
     OSTCBCur->OSTCBStat     |= OS_STAT_MBOX;          /* Message not available, task will pend         */
@@ -362,9 +399,12 @@ void  *OSMboxPend (OS_EVENT  *pevent,
 #endif
     OSTCBCur->OSTCBMsg           = (void      *)0;    /* Clear  received message                       */
     OS_EXIT_CRITICAL();
+    OS_TRACE_MBOX_PEND_EXIT(*perr);
+
     return (pmsg);                                    /* Return received message                       */
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                     ABORT WAITING ON A MESSAGE MAILBOX
@@ -454,7 +494,7 @@ INT8U  OSMboxPendAbort (OS_EVENT  *pevent,
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                      POST MESSAGE TO A MAILBOX
@@ -495,7 +535,11 @@ INT8U  OSMboxPost (OS_EVENT  *pevent,
         return (OS_ERR_POST_NULL_PTR);
     }
 #endif
+
+    OS_TRACE_MBOX_POST_ENTER(pevent);
+    
     if (pevent->OSEventType != OS_EVENT_TYPE_MBOX) {  /* Validate event block type                     */
+        OS_TRACE_MBOX_POST_EXIT(OS_ERR_EVENT_TYPE);
         return (OS_ERR_EVENT_TYPE);
     }
     OS_ENTER_CRITICAL();
@@ -504,19 +548,22 @@ INT8U  OSMboxPost (OS_EVENT  *pevent,
         (void)OS_EventTaskRdy(pevent, pmsg, OS_STAT_MBOX, OS_STAT_PEND_OK);
         OS_EXIT_CRITICAL();
         OS_Sched();                                   /* Find highest priority task ready to run       */
+        OS_TRACE_MBOX_POST_EXIT(OS_ERR_NONE);
         return (OS_ERR_NONE);
     }
     if (pevent->OSEventPtr != (void *)0) {            /* Make sure mailbox doesn't already have a msg  */
         OS_EXIT_CRITICAL();
+        OS_TRACE_MBOX_POST_EXIT(OS_ERR_MBOX_FULL);
         return (OS_ERR_MBOX_FULL);
     }
     pevent->OSEventPtr = pmsg;                        /* Place message in mailbox                      */
     OS_EXIT_CRITICAL();
+    OS_TRACE_MBOX_POST_EXIT(OS_ERR_NONE);
     return (OS_ERR_NONE);
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                      POST MESSAGE TO A MAILBOX
@@ -568,7 +615,11 @@ INT8U  OSMboxPostOpt (OS_EVENT  *pevent,
         return (OS_ERR_POST_NULL_PTR);
     }
 #endif
+
+    OS_TRACE_MBOX_POST_OPT_ENTER(pevent, opt);
+
     if (pevent->OSEventType != OS_EVENT_TYPE_MBOX) {  /* Validate event block type                     */
+        OS_TRACE_MBOX_POST_OPT_EXIT(OS_ERR_EVENT_TYPE);
         return (OS_ERR_EVENT_TYPE);
     }
     OS_ENTER_CRITICAL();
@@ -584,19 +635,22 @@ INT8U  OSMboxPostOpt (OS_EVENT  *pevent,
         if ((opt & OS_POST_OPT_NO_SCHED) == 0u) {     /* See if scheduler needs to be invoked          */
             OS_Sched();                               /* Find HPT ready to run                         */
         }
+        OS_TRACE_MBOX_POST_OPT_EXIT(OS_ERR_NONE);
         return (OS_ERR_NONE);
     }
     if (pevent->OSEventPtr != (void *)0) {            /* Make sure mailbox doesn't already have a msg  */
         OS_EXIT_CRITICAL();
+        OS_TRACE_MBOX_POST_OPT_EXIT(OS_ERR_MBOX_FULL);
         return (OS_ERR_MBOX_FULL);
     }
     pevent->OSEventPtr = pmsg;                        /* Place message in mailbox                      */
     OS_EXIT_CRITICAL();
+    OS_TRACE_MBOX_POST_OPT_EXIT(OS_ERR_NONE);
     return (OS_ERR_NONE);
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                       QUERY A MESSAGE MAILBOX

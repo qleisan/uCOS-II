@@ -4,12 +4,12 @@
 *                                          The Real-Time Kernel
 *                                             CORE FUNCTIONS
 *
-*                              (c) Copyright 1992-2013, Micrium, Weston, FL
+*                           (c) Copyright 1992-2017; Micrium, Inc.; Weston; FL
 *                                           All Rights Reserved
 *
 * File    : OS_CORE.C
 * By      : Jean J. Labrosse
-* Version : V2.92.10
+* Version : V2.92.14
 *
 * LICENSING TERMS:
 * ---------------
@@ -18,6 +18,15 @@
 * its use in your product. We provide ALL the source code for your convenience and to help you experience
 * uC/OS-II.   The fact that the  source is provided does  NOT  mean that you can use it without  paying a
 * licensing fee.
+*
+* Knowledge of the source code may NOT be used to develop a similar product.
+*
+* Please help us continue to provide the embedded community with the finest software available.
+* Your honesty is greatly appreciated.
+*
+* You can find our product's user manual, API reference, release notes and
+* more information at https://doc.micrium.com.
+* You can contact us at www.micrium.com.
 *********************************************************************************************************
 */
 
@@ -56,7 +65,7 @@ INT8U  const  OSUnMapTbl[256] = {
     4u, 0u, 1u, 0u, 2u, 0u, 1u, 0u, 3u, 0u, 1u, 0u, 2u, 0u, 1u, 0u  /* 0xF0 to 0xFF                   */
 };
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                         FUNCTION PROTOTYPES
@@ -79,7 +88,7 @@ static  void  OS_InitTCBList(void);
 
 static  void  OS_SchedNew(void);
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                        GET THE NAME OF A SEMAPHORE, MUTEX, MAILBOX or QUEUE
@@ -159,7 +168,7 @@ INT8U  OSEventNameGet (OS_EVENT   *pevent,
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                        ASSIGN A NAME TO A SEMAPHORE, MUTEX, MAILBOX or QUEUE
@@ -232,11 +241,12 @@ void  OSEventNameSet (OS_EVENT  *pevent,
     OS_ENTER_CRITICAL();
     pevent->OSEventName = pname;
     OS_EXIT_CRITICAL();
+    OS_TRACE_EVENT_NAME_SET(pevent, pname);
     *perr = OS_ERR_NONE;
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                       PEND ON MULTIPLE EVENTS
@@ -307,7 +317,7 @@ void  OSEventNameSet (OS_EVENT  *pevent,
 *                 case of any error(s).
 *********************************************************************************************************
 */
-/*$PAGE*/
+
 #if ((OS_EVENT_EN) && (OS_EVENT_MULTI_EN > 0u))
 INT16U  OSEventPendMulti (OS_EVENT  **pevents_pend,
                           OS_EVENT  **pevents_rdy,
@@ -393,7 +403,6 @@ INT16U  OSEventPendMulti (OS_EVENT  **pevents_pend,
         return (0u);
     }
 
-/*$PAGE*/
     events_rdy     =  OS_FALSE;
     events_rdy_nbr =  0u;
     events_stat    =  OS_STAT_RDY;
@@ -471,7 +480,7 @@ INT16U  OSEventPendMulti (OS_EVENT  **pevents_pend,
        *perr        =  OS_ERR_NONE;
         return (events_rdy_nbr);
     }
-/*$PAGE*/
+
                                                         /* Otherwise, must wait until any event occurs */
     OSTCBCur->OSTCBStat     |= events_stat  |           /* Resource not available, ...                 */
                                OS_STAT_MULTI;           /* ... pend on multiple events                 */
@@ -558,7 +567,7 @@ INT16U  OSEventPendMulti (OS_EVENT  **pevents_pend,
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                           INITIALIZATION
@@ -626,7 +635,8 @@ void  OSInit (void)
     OSDebugInit();
 #endif
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                              ENTER ISR
@@ -658,9 +668,11 @@ void  OSIntEnter (void)
         if (OSIntNesting < 255u) {
             OSIntNesting++;                      /* Increment ISR nesting level                        */
         }
+        OS_TRACE_ISR_ENTER();
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                              EXIT ISR
@@ -708,15 +720,24 @@ void  OSIntExit (void)
                     OS_TLS_TaskSw();
 #endif
 #endif
+                    OS_TRACE_ISR_EXIT_TO_SCHEDULER();
 
                     OSIntCtxSw();                          /* Perform interrupt level ctx switch       */
+                } else {
+                    OS_TRACE_ISR_EXIT();
                 }
+            } else {
+                OS_TRACE_ISR_EXIT();
             }
+        } else {
+            OS_TRACE_ISR_EXIT();
         }
+
         OS_EXIT_CRITICAL();
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                         INDICATE THAT IT'S NO LONGER SAFE TO CREATE OBJECTS
@@ -742,7 +763,7 @@ void  OSSafetyCriticalStart (void)
 
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                         PREVENT SCHEDULING
@@ -780,7 +801,7 @@ void  OSSchedLock (void)
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                          ENABLE SCHEDULING
@@ -826,7 +847,7 @@ void  OSSchedUnlock (void)
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                         START MULTITASKING
@@ -857,7 +878,8 @@ void  OSStart (void)
         OSStartHighRdy();                            /* Execute target specific code to start task     */
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                      STATISTICS INITIALIZATION
@@ -898,7 +920,8 @@ void  OSStatInit (void)
     OS_EXIT_CRITICAL();
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                         PROCESS SYSTEM TICK
@@ -931,6 +954,7 @@ void  OSTimeTick (void)
 #if OS_TIME_GET_SET_EN > 0u
     OS_ENTER_CRITICAL();                                   /* Update the 32-bit tick counter               */
     OSTime++;
+    OS_TRACE_TICK_INCREMENT(OSTime);
     OS_EXIT_CRITICAL();
 #endif
     if (OSRunning == OS_TRUE) {
@@ -966,7 +990,7 @@ void  OSTimeTick (void)
                 if (ptcb->OSTCBDly == 0u) {                /* Check for timeout                            */
 
                     if ((ptcb->OSTCBStat & OS_STAT_PEND_ANY) != OS_STAT_RDY) {
-                        ptcb->OSTCBStat  &= (INT8U)~(INT8U)OS_STAT_PEND_ANY;          /* Yes, Clear status flag   */
+                        ptcb->OSTCBStat  &= (INT8U)~(INT8U)OS_STAT_PEND_ANY;   /* Yes, Clear status flag   */
                         ptcb->OSTCBStatPend = OS_STAT_PEND_TO;                 /* Indicate PEND timeout    */
                     } else {
                         ptcb->OSTCBStatPend = OS_STAT_PEND_OK;
@@ -975,6 +999,7 @@ void  OSTimeTick (void)
                     if ((ptcb->OSTCBStat & OS_STAT_SUSPEND) == OS_STAT_RDY) {  /* Is task suspended?       */
                         OSRdyGrp               |= ptcb->OSTCBBitY;             /* No,  Make ready          */
                         OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                        OS_TRACE_TASK_READY(ptcb);
                     }
                 }
             }
@@ -984,13 +1009,13 @@ void  OSTimeTick (void)
     }
 }
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                             GET VERSION
 *
-* Description: This function is used to return the version number of uC/OS-II.  The returned value 
-*              corresponds to uC/OS-II's version number multiplied by 10000.  In other words, version 
+* Description: This function is used to return the version number of uC/OS-II.  The returned value
+*              corresponds to uC/OS-II's version number multiplied by 10000.  In other words, version
 *              2.01.00 would be returned as 20100.
 *
 * Arguments  : none
@@ -1004,7 +1029,7 @@ INT16U  OSVersion (void)
     return (OS_VERSION);
 }
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                           DUMMY FUNCTION
@@ -1023,7 +1048,7 @@ void  OS_Dummy (void)
 }
 #endif
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                           MAKE TASK READY TO RUN BASED ON EVENT OCCURING
@@ -1098,6 +1123,7 @@ INT8U  OS_EventTaskRdy (OS_EVENT  *pevent,
     if ((ptcb->OSTCBStat &   OS_STAT_SUSPEND) == OS_STAT_RDY) {
         OSRdyGrp         |=  ptcb->OSTCBBitY;           /* Put task in the ready to run list           */
         OSRdyTbl[y]      |=  ptcb->OSTCBBitX;
+        OS_TRACE_TASK_READY(ptcb);
     }
 
     OS_EventTaskRemove(ptcb, pevent);                   /* Remove this task from event   wait list     */
@@ -1111,7 +1137,8 @@ INT8U  OS_EventTaskRdy (OS_EVENT  *pevent,
     return (prio);
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                  MAKE TASK WAIT FOR EVENT TO OCCUR
@@ -1139,12 +1166,14 @@ void  OS_EventTaskWait (OS_EVENT *pevent)
 
     y             =  OSTCBCur->OSTCBY;            /* Task no longer ready                              */
     OSRdyTbl[y]  &= (OS_PRIO)~OSTCBCur->OSTCBBitX;
+    OS_TRACE_TASK_SUSPENDED(OSTCBCur);
     if (OSRdyTbl[y] == 0u) {                      /* Clear event grp bit if this was only task pending */
         OSRdyGrp &= (OS_PRIO)~OSTCBCur->OSTCBBitY;
     }
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                         MAKE TASK WAIT FOR ANY OF MULTIPLE EVENTS TO OCCUR
@@ -1182,12 +1211,14 @@ void  OS_EventTaskWaitMulti (OS_EVENT **pevents_wait)
 
     y             =  OSTCBCur->OSTCBY;            /* Task no longer ready                              */
     OSRdyTbl[y]  &= (OS_PRIO)~OSTCBCur->OSTCBBitX;
+    OS_TRACE_TASK_SUSPENDED(OSTCBCur);
     if (OSRdyTbl[y] == 0u) {                      /* Clear event grp bit if this was only task pending */
         OSRdyGrp &= (OS_PRIO)~OSTCBCur->OSTCBBitY;
     }
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                  REMOVE TASK FROM EVENT WAIT LIST
@@ -1218,7 +1249,8 @@ void  OS_EventTaskRemove (OS_TCB   *ptcb,
     ptcb->OSTCBEventPtr     = (OS_EVENT  *)0;               /* Unlink OS_EVENT from OS_TCB             */
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                             REMOVE TASK FROM MULTIPLE EVENTS WAIT LISTS
@@ -1260,7 +1292,8 @@ void  OS_EventTaskRemoveMulti (OS_TCB    *ptcb,
     }
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                             INITIALIZE EVENT CONTROL BLOCK'S WAIT LIST
@@ -1286,7 +1319,8 @@ void  OS_EventWaitListInit (OS_EVENT *pevent)
     }
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                             INITIALIZATION
@@ -1338,7 +1372,8 @@ static  void  OS_InitEventList (void)
 #endif
 #endif
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                             INITIALIZATION
@@ -1382,7 +1417,8 @@ static  void  OS_InitMisc (void)
     OSTaskRegNextAvailID      = 0u;                        /* Initialize the task register ID          */
 #endif
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                             INITIALIZATION
@@ -1413,7 +1449,7 @@ static  void  OS_InitRdyList (void)
     OSTCBCur      = (OS_TCB *)0;
 }
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                                             INITIALIZATION
@@ -1474,7 +1510,8 @@ static  void  OS_InitTaskIdle (void)
     OSTaskNameSet(OS_TASK_IDLE_PRIO, (INT8U *)(void *)"uC/OS-II Idle", &err);
 #endif
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                             INITIALIZATION
@@ -1537,7 +1574,8 @@ static  void  OS_InitTaskStat (void)
 #endif
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                             INITIALIZATION
@@ -1578,7 +1616,8 @@ static  void  OS_InitTCBList (void)
     OSTCBList               = (OS_TCB *)0;                       /* TCB lists initializations          */
     OSTCBFreeList           = &OSTCBTbl[0];
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                      CLEAR A SECTION OF MEMORY
@@ -1607,7 +1646,8 @@ void  OS_MemClr (INT8U  *pdest,
         size--;
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                       COPY A BLOCK OF MEMORY
@@ -1641,7 +1681,8 @@ void  OS_MemCopy (INT8U  *pdest,
         size--;
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                              SCHEDULER
@@ -1735,7 +1776,7 @@ static  void  OS_SchedNew (void)
 #endif
 }
 
-/*$PAGE*/
+
 /*
 *********************************************************************************************************
 *                               DETERMINE THE LENGTH OF AN ASCII STRING
@@ -1772,7 +1813,8 @@ INT8U  OS_StrLen (INT8U *psrc)
     return (len);
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                              IDLE TASK
@@ -1810,7 +1852,8 @@ void  OS_TaskIdle (void *p_arg)
         OSTaskIdleHook();                        /* Call user definable HOOK                           */
     }
 }
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                           STATISTICS TASK
@@ -1876,7 +1919,8 @@ void  OS_TaskStat (void *p_arg)
     }
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                        CHECK ALL TASK STACKS
@@ -1918,7 +1962,8 @@ void  OS_TaskStatStkChk (void)
     }
 }
 #endif
-/*$PAGE*/
+
+
 /*
 *********************************************************************************************************
 *                                           INITIALIZE TCB
@@ -2076,7 +2121,7 @@ INT8U  OS_TCBInit (INT8U    prio,
 
         OS_ENTER_CRITICAL();
         ptcb->OSTCBNext = OSTCBList;                       /* Link into TCB chain                      */
-        ptcb->OSTCBPrev = (OS_TCB *)0;         
+        ptcb->OSTCBPrev = (OS_TCB *)0;
         if (OSTCBList != (OS_TCB *)0) {
             OSTCBList->OSTCBPrev = ptcb;
         }
@@ -2084,6 +2129,7 @@ INT8U  OS_TCBInit (INT8U    prio,
         OSRdyGrp               |= ptcb->OSTCBBitY;         /* Make task ready to run                   */
         OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
         OSTaskCtr++;                                       /* Increment the #tasks counter             */
+        OS_TRACE_TASK_READY(ptcb);
         OS_EXIT_CRITICAL();
         return (OS_ERR_NONE);
     }
