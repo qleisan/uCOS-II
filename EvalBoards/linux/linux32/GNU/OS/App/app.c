@@ -36,6 +36,10 @@ void MyTask(void *p_arg)
 	OS_CPU_SR cpu_sr = 0;
 #endif
 
+	OS_ENTER_CRITICAL();
+	printf("Name: %s status: RED\n", sTaskName);
+	OS_EXIT_CRITICAL();
+
 	while (1) {
 
 		/*
@@ -47,9 +51,28 @@ void MyTask(void *p_arg)
 		printf("Name: %s\n", sTaskName);
 		OS_EXIT_CRITICAL();
 
-		/* Delay so other tasks may execute. */
-		OSTimeDly(50);
-	}			/* while */
+		// only one traffic light for now
+		if (strcmp(sTaskName, "Task 1") == 0) {
+			// TODO: take semaphore
+			OSTimeDly(OS_TICKS_PER_SEC * 5); // safety margin
+
+			printf("Name: %s status: RED+YELLOW\n", sTaskName);
+			OSTimeDly(OS_TICKS_PER_SEC * 1);
+			
+			printf("Name: %s status: GREEN\n", sTaskName);
+			OSTimeDly(OS_TICKS_PER_SEC * 15);
+			
+			printf("Name: %s status: GREEN+YELLOW\n", sTaskName);
+			OSTimeDly(OS_TICKS_PER_SEC * 1);
+
+			printf("Name: %s status: RED\n", sTaskName);
+			// TODO: return semaphore
+
+			OSTimeDly(OS_TICKS_PER_SEC * 3); // don't try to take semaphore too fast
+		} else
+			/* Delay so other tasks may execute. */
+			OSTimeDly(OS_TICKS_PER_SEC * 60);
+	} 
 }
 
 int main(void)
@@ -66,15 +89,9 @@ int main(void)
 	 */
 	INT8U Stk1[APP_TASK_1_STK_SIZE];
 	INT8U Stk2[APP_TASK_2_STK_SIZE];
-	INT8U Stk3[APP_TASK_3_STK_SIZE];
-	INT8U Stk4[APP_TASK_4_STK_SIZE];
-	INT8U Stk5[APP_TASK_5_STK_SIZE];
 
 	char sTask1[] = "Task 1";
 	char sTask2[] = "Task 2";
-	char sTask3[] = "Task 3";
-	char sTask4[] = "Task 4";
-	char sTask5[] = "Task 5";
 
 	hardware_init();
 
@@ -99,37 +116,6 @@ int main(void)
 		printf("OSTaskCreate() failed for %s: Err = %d\n", sTask2,
 		       (int)err);
 	}
-
-	err =
-	    OSTaskCreate(MyTask, sTask3,
-			 (void *)&Stk3[STK_HEAD(APP_TASK_3_STK_SIZE)],
-			 APP_TASK_3_PRIO);
-
-	if (err != OS_ERR_NONE) {
-		printf("OSTaskCreate() failed for %s: Err = %d\n", sTask3,
-		       (int)err);
-	}
-
-	err =
-	    OSTaskCreate(MyTask, sTask4,
-			 (void *)&Stk4[STK_HEAD(APP_TASK_4_STK_SIZE)],
-			 APP_TASK_4_PRIO);
-
-	if (err != OS_ERR_NONE) {
-		printf("OSTaskCreate() failed for %s: Err = %d\n", sTask4,
-		       (int)err);
-	}
-
-	err =
-	    OSTaskCreate(MyTask, sTask5,
-			 (void *)&Stk5[STK_HEAD(APP_TASK_5_STK_SIZE)],
-			 APP_TASK_5_PRIO);
-
-	if (err != OS_ERR_NONE) {
-		printf("OSTaskCreate() failed for %s: Err = %d\n", sTask5,
-		       (int)err);
-	}
-
 
 	OS_ENTER_CRITICAL();
 	printf("all threads created\n");
