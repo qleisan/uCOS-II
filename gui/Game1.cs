@@ -45,8 +45,9 @@ public class Game1 : Game
 {
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
+    private string myfilepath;
 
-    public Game1()
+    public Game1(string filename)
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
@@ -54,6 +55,24 @@ public class Game1 : Game
 
         _graphics.PreferredBackBufferWidth = 250;
         _graphics.PreferredBackBufferHeight = 400;
+
+        Console.WriteLine("Qleisan was here");
+        Console.WriteLine(filename);
+
+        string suffixPath = "../../../../EvalBoards/linux/linux32/GNU/OS/";
+        string filePath = Path.Combine(suffixPath, filename);
+        Console.WriteLine(filePath);
+
+        if (File.Exists(filePath))
+        {
+            Console.WriteLine("File exists");
+            myfilepath = filePath;
+        }
+        else
+        {
+            Console.WriteLine("File does not exist");
+            Exit();
+        }
     }
 
     protected override void Initialize()
@@ -98,7 +117,8 @@ public class Game1 : Game
         string filePath = $@"\\wsl$\{wslInstance}{wslFilePath.Replace('/', '\\')}";
 
         // filePath = "/home/qleisan/uCOS-II/EvalBoards/linux/linux32/GNU/OS/Task1.log";
-        filePath = "../EvalBoards/linux/linux32/GNU/OS/Task1.log";
+        // filePath = "../EvalBoards/linux/linux32/GNU/OS/Task1.log";
+        filePath = myfilepath;
 
         // Access the file using the Windows path
         try

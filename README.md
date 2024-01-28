@@ -29,3 +29,11 @@ make && ./OS.elf
 ```
 
 Application now implements a simple traffic light simulation. Output is printed to console and written to logfile(s).
+
+
+WIP
+- debug (build) C# using VS Code GUI => compile error
+- cd /home/qleisan/RTOS_tmp/uCOS-II/gui/bin/Debug/net6.0
+- ./mymonogame Task1.log
+- ./mymonogame Task2.log
+

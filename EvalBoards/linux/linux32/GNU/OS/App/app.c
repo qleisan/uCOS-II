@@ -73,8 +73,10 @@ void MyTask(void *p_arg)
 		printf("Name: %s\n", sTaskName);
 		OS_EXIT_CRITICAL();
 
-		// only one traffic light for now
+		// // only one traffic light for now
 		if (strcmp(sTaskName, "Task1") == 0) {
+			OSTimeDly(OS_TICKS_PER_SEC * 6); // debugging only
+		}
 			// TODO: take semaphore
 			OSTimeDly(OS_TICKS_PER_SEC * 5); // safety margin
 
@@ -95,9 +97,9 @@ void MyTask(void *p_arg)
 			// TODO: return semaphore
 
 			OSTimeDly(OS_TICKS_PER_SEC * 3); // don't try to take semaphore too fast
-		} else
-			/* Delay so other tasks may execute. */
-			OSTimeDly(OS_TICKS_PER_SEC * 60);
+		// } else
+		// 	/* Delay so other tasks may execute. */
+		// 	OSTimeDly(OS_TICKS_PER_SEC * 60);
 	} 
 }
 
