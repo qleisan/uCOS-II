@@ -1,0 +1,10 @@
+Last line in this file determine status of trafficlight
+If the line can be converted to an integer the 3 LSB are used to determine the status of the trafficlight
+4 => 100 => Red
+2 => 010 => Yellow
+1 => 001 => Green
+
+6 => 110 => Red + Yellow
+
+Last line below is the one that matters
+4
