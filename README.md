@@ -28,4 +28,4 @@ cd uCOS-II/EvalBoards/linux/linux32/GNU/OS/
 make && ./OS.elf	
 ```
 
-Application now implements a simple traffic light simulation. Output is printed to console.
+Application now implements a simple traffic light simulation. Output is printed to console and written to logfile(s).

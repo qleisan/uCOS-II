@@ -28,6 +28,17 @@ void hardware_init()
 {
 }
 
+void writeToLog(const char* filename, int num) {
+	FILE* file = fopen(filename, "a");
+	if (file == NULL) {
+		printf("Error opening file: %s\n", filename);
+		return;
+	}
+	fprintf(file, "\n%d", num);
+	fclose(file); // ensures data is flushed to file
+}
+
+
 /* Function common to all tasks */
 void MyTask(void *p_arg)
 {
@@ -36,9 +47,20 @@ void MyTask(void *p_arg)
 	OS_CPU_SR cpu_sr = 0;
 #endif
 
+    char filename[256];
+    strcpy(filename, sTaskName);
+    strcat(filename, ".log");
+
+    FILE *f = fopen(filename, "w");
+    if (f == NULL) {
+        printf("Error opening file!\n");
+    }
+    fclose(f); 
+
 	OS_ENTER_CRITICAL();
 	printf("Name: %s status: RED\n", sTaskName);
 	OS_EXIT_CRITICAL();
+	writeToLog(filename, 4);
 
 	while (1) {
 
@@ -52,20 +74,24 @@ void MyTask(void *p_arg)
 		OS_EXIT_CRITICAL();
 
 		// only one traffic light for now
-		if (strcmp(sTaskName, "Task 1") == 0) {
+		if (strcmp(sTaskName, "Task1") == 0) {
 			// TODO: take semaphore
 			OSTimeDly(OS_TICKS_PER_SEC * 5); // safety margin
 
 			printf("Name: %s status: RED+YELLOW\n", sTaskName);
+			writeToLog(filename, 6);
 			OSTimeDly(OS_TICKS_PER_SEC * 1);
 			
 			printf("Name: %s status: GREEN\n", sTaskName);
+			writeToLog(filename, 1);
 			OSTimeDly(OS_TICKS_PER_SEC * 15);
 			
 			printf("Name: %s status: GREEN+YELLOW\n", sTaskName);
+			writeToLog(filename, 3);
 			OSTimeDly(OS_TICKS_PER_SEC * 1);
 
 			printf("Name: %s status: RED\n", sTaskName);
+			writeToLog(filename, 4);
 			// TODO: return semaphore
 
 			OSTimeDly(OS_TICKS_PER_SEC * 3); // don't try to take semaphore too fast
@@ -90,8 +116,8 @@ int main(void)
 	INT8U Stk1[APP_TASK_1_STK_SIZE];
 	INT8U Stk2[APP_TASK_2_STK_SIZE];
 
-	char sTask1[] = "Task 1";
-	char sTask2[] = "Task 2";
+	char sTask1[] = "Task1";
+	char sTask2[] = "Task2";
 
 	hardware_init();
 
